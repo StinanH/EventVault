@@ -2,12 +2,10 @@
 using EventVault.Data.Repositories.IRepositories;
 using EventVault.Models;
 using EventVault.Models.DTOs;
-using EventVault.Models.Eventbrite;
 using EventVault.Models.ViewModels;
 using EventVault.Services.IServices;
 using System.Net.Http;
 using System.Text.Json;
-using EventVault.Models;
 using System.Globalization;
 
 namespace EventVault.Services
@@ -66,8 +64,9 @@ namespace EventVault.Services
                                              DateTimeStyles.None,
                                              out DateTime parsedDate);
 
+                        string[] formats = { "h\\:mm", "hh\\:mm", "h\\:mm\\:ss", "hh\\:mm\\:ss" };
                         // Parse time
-                        bool timeParsed = TimeSpan.TryParseExact(vsEvent.StartTime, "hh\\:mm",
+                        bool timeParsed = TimeSpan.TryParseExact(vsEvent.StartTime, formats,
                                                                  CultureInfo.InvariantCulture,
                                                                  out TimeSpan parsedTime);
 
