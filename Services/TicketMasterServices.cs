@@ -1,5 +1,6 @@
 ﻿using EventVault.Models.ViewModels;
 using EventVault.Services.IServices;
+using Org.BouncyCastle.Crypto;
 using System.Net.Http;
 using System.Text.Json;
 using TicketmasterTesting.Models.TicketMasterModels;
@@ -47,10 +48,10 @@ namespace EventVault.Services
 
                     Venue = new VenueViewModel
                     {
-                        Name = r.Embedded?.Venues?.FirstOrDefault()?.Name ?? "Unknown Venue",
-                        City = r.Embedded?.Venues?.FirstOrDefault()?.City?.Name ?? "Unknown City",
-                        Address = r.Embedded?.Venues?.FirstOrDefault()?.Address?.Line1 ?? "Unknown Address",
-                        ZipCode = r.Embedded?.Venues?.FirstOrDefault()?.PostalCode ?? "Unknown ZipCode",
+                        Name = r.Embedded?.Venues?.FirstOrDefault()?.Name ?? "",
+                        City = r.Embedded?.Venues?.FirstOrDefault()?.City?.Name ?? "",
+                        Address = r.Embedded?.Venues?.FirstOrDefault()?.Address?.Line1 ?? "",
+                        ZipCode = r.Embedded?.Venues?.FirstOrDefault()?.PostalCode ?? "",
                         LocationLat = r.Embedded?.Venues?.FirstOrDefault()?.Location?.Latitude ?? "0",
                         LocationLong = r.Embedded?.Venues?.FirstOrDefault()?.Location?.Longitude ?? "0"
                     },
@@ -81,7 +82,68 @@ namespace EventVault.Services
                 var content = await apiResponse.Content.ReadAsStringAsync();
                 var eventHolder = JsonSerializer.Deserialize<EventHolder>(content);
 
+                if (eventHolder == null || eventHolder.Embedded == null || eventHolder.Embedded.Events == null)
+                {
+                    throw new Exception("Couldn't find data! Did you spell city name right?");
+                }
+
                 return eventHolder;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<EventViewModel>> GetPaginatedEventsSortedByDate(int page)
+        {
+            string city = "Stockholm";
+            int nrOfResults = 25;
+
+            try
+            {
+                string apiUrl = $"https://app.ticketmaster.com/discovery/v2/events?size={nrOfResults}&page={page}&apikey={_ticketMasterApiKey}&locale=*&city=Stockholm&sort=date,asc";
+                var apiResponse = await _httpClient.GetAsync(apiUrl);
+
+                apiResponse.EnsureSuccessStatusCode();
+
+                var content = await apiResponse.Content.ReadAsStringAsync();
+                var eventHolder = JsonSerializer.Deserialize<EventHolder>(content);
+
+                var eventViewmodels = eventHolder.Embedded.Events.Select(r => new EventViewModel
+                {
+                    Title = r.Name ?? "Unknown Title",
+                    EventId = r.Id ?? "Unknown Id",
+                    Category = r.Classifications != null && r.Classifications
+                    .Any(c => c.Genre != null) ?
+                    string.Join(", ", r.Classifications.Where(c => c.Segment != null && c.Genre != null).Select(c => c.Segment.Name + " - " + c.Genre.Name))
+                    : "Unknown Genre",
+
+                    Description = "",
+                    //need to find description of event
+
+                    ImageUrl = r.Images?.FirstOrDefault(x => x.Ratio == "3_2")?.Url ?? "",
+                    EventUrlPage = r.Url ?? "",
+                    LowestPrice = r.PriceRanges?.Min(pr => pr.Min) ?? 0,
+                    HighestPrice = r.PriceRanges?.Max(pr => pr.Max) ?? 0,
+
+                    Venue = new VenueViewModel
+                    {
+                        Name = r.Embedded?.Venues?.FirstOrDefault()?.Name ?? "Unknown Venue",
+                        City = r.Embedded?.Venues?.FirstOrDefault()?.City?.Name ?? "Unknown City",
+                        Address = r.Embedded?.Venues?.FirstOrDefault()?.Address?.Line1 ?? "Unknown Address",
+                        ZipCode = r.Embedded?.Venues?.FirstOrDefault()?.PostalCode ?? "Unknown ZipCode",
+                        LocationLat = r.Embedded?.Venues?.FirstOrDefault()?.Location?.Latitude ?? "0",
+                        LocationLong = r.Embedded?.Venues?.FirstOrDefault()?.Location?.Longitude ?? "0"
+                    },
+
+                    Dates = r.Dates.Start.DateTime.HasValue ? new List<DateTime> { r.Dates.Start.DateTime.Value } : new List<DateTime>()
+
+                }).ToList();
+
+                return eventViewmodels;
 
             }
             catch (Exception ex)

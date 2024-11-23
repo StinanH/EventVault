@@ -8,5 +8,7 @@ namespace EventVault.Services.IServices
         Task<List<EventViewModel>> GetEventDataAsync();
 
         Task<IEnumerable<KBEventListViewModel>> GetListOfEventsAsync();
+
+        Task<IEnumerable<EventViewModel>> GetPaginatedEventsSortedByDate(int page);
     }
 }

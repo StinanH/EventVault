@@ -121,9 +121,9 @@ namespace EventVault.Services
                 {
                     eventViewModel.Venue = new VenueViewModel
                     {
-                        Name = eventResponse.locations.First().Value.name,
-                        Address = eventResponse.locations.First().Value.street,
-                        City = eventResponse.locations.First().Value.city,
+                        Name = eventResponse.locations.First().Value.name ?? "",
+                        Address = eventResponse.locations.First().Value.street ?? "",
+                        City = eventResponse.locations.First().Value.city ?? "",
                     };
                 }
 
@@ -195,6 +195,13 @@ namespace EventVault.Services
             }
 
             return dateList;
+        }
+
+        public async Task<IEnumerable<EventViewModel>> GetPaginatedEventsSortedByDate(int page)
+        {
+            var eventList = new List<EventViewModel>();
+
+            return eventList;
         }
     }
 }

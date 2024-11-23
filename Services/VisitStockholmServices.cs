@@ -51,10 +51,10 @@ namespace EventVault.Services
 
                             Venue = new VenueViewModel
                             {
-                                Name = vsEvent.VenueName,
-                                Address = vsEvent.Address,
-                                City = vsEvent.City,
-                                ZipCode = vsEvent.ZipCode
+                                Name = vsEvent.VenueName ?? "",
+                                Address = vsEvent.Address ?? "",
+                                City = vsEvent.City ?? "",
+                                ZipCode = vsEvent.ZipCode ?? ""
                             }
                         };
 
@@ -97,6 +97,13 @@ namespace EventVault.Services
 
             // Return the list of events
             //return visitStockholmResponse.Results;
+
+            return eventList;
+        }
+
+        public async Task<IEnumerable<EventViewModel>> GetPaginatedEventsSortedByDate(int page)
+        {
+            var eventList = new List<EventViewModel>();
 
             return eventList;
         }
